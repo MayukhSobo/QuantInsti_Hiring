@@ -1,4 +1,3 @@
-from queue import Queue
 from trading import helper
 
 API_KEY = "rfJexxxWCSDzmyE7Qn_d"
@@ -16,3 +15,4 @@ EVENT_QUEUE_ID = {
 
 TASK_QUEUE = helper.IndexedQueue()
 EXCHANGE_SERVER_ID = None
+CURRENT_BUFFER = None

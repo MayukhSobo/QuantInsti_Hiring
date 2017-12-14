@@ -7,6 +7,5 @@ class Porfolio:
         self.cash = cash
         self.stocks = n_stocks
 
-
     def __str__(self):
         print('You have: ${} remaining'.format(self.cash))

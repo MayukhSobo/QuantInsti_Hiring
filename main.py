@@ -49,11 +49,13 @@ def main(server_port=8080):
     ############################################
     # Create thread workers and dispatch
     md_brd = MDBroadcast(name='md-broadcaster', que=constants.TASK_QUEUE)
+    md_lstn = MDListener(name='md-listener', que=constants.TASK_QUEUE)
     # md_lstn = Thread(target=md_listen, args=(constants.TASK_QUEUE,))
     # md_lstn.setDaemon(True)
     # md_lstn.start()
     # md_brd.setDaemon(True)
     md_brd.start()
+    md_lstn.start()
     # Wait for all threads to end, practically forever..:)
 
 
