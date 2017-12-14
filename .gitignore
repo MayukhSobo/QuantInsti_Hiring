@@ -1,3 +1,7 @@
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
 trading/.idea/
+exchange_server.err
+exchange_server.out
+trading/__pycache__/
+trading/data/

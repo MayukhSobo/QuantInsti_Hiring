@@ -1,4 +1,5 @@
 from queue import Queue
+from trading import helper
 
 API_KEY = "rfJexxxWCSDzmyE7Qn_d"
 
@@ -13,4 +14,5 @@ EVENT_QUEUE_ID = {
     'exit'  # Exit the system
 }
 
-TASK_QUEUE = Queue()
+TASK_QUEUE = helper.IndexedQueue()
+EXCHANGE_SERVER_ID = None

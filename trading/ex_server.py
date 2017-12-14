@@ -1,5 +1,8 @@
 from http.server import (BaseHTTPRequestHandler,
                          HTTPServer)
+import os
+import sys
+from trading import constants
 # import SocketServer
 
 
@@ -24,9 +27,12 @@ class S(BaseHTTPRequestHandler):
 
 
 def run(port, server_class=HTTPServer, handler_class=S):
+    constants.EXCHANGE_SERVER_ID = os.getpid()
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print('Starting httpd...')
+    sys.stdout = open('exchange_server' + ".out", "a")
+    sys.stderr = open('exchange_server' + ".err", "a")
     httpd.serve_forever()
 
 
@@ -36,4 +42,4 @@ if __name__ == "__main__":
     if len(argv) == 2:
         run(port=int(argv[1]))
     else:
-        run()
+        run(port=8080)
