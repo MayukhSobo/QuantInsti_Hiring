@@ -4,14 +4,15 @@ from trading import ex_server
 import sys
 from trading import porfolio
 
-def main_event(acount):
+
+def main_event(account):
     if constants.TASK_QUEUE.empty():
         # First task in chain is always independent
         constants.TASK_QUEUE.put('md-broadcast')
     else:
         event = constants.TASK_QUEUE.get()
         if event in constants.EVENT_QUEUE_ID:
-            print(acount)
+            print(account)
             sys.exit()
 
 
