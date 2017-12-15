@@ -9,3 +9,6 @@ class Porfolio:
 
     def __str__(self):
         print('You have: ${} remaining'.format(self.cash))
+
+    def get_portfolio_value(self, current_price):
+        return self.cash + self.stocks * current_price

@@ -1,9 +1,8 @@
 from time import sleep
-from trading import helper
+# from trading import helper
 import threading
 import csv
-import os
-from trading.constants import CURRENT_BUFFER
+# from trading.constants import CURRENT_DATA_BUFFER
 import numpy as np
 
 
@@ -34,12 +33,11 @@ class MDBroadcast(threading.Thread):
             read one line of the CSV file and broadcast
             it to the MD-Listener. It also pushes the
             'md-listener' event to the task event queue.
-
-            :param task_que: Universal Task Queue
             :return:
             """
-        global CURRENT_BUFFER
+        global CURRENT_DATA_BUFFER
         global lock
+        # i = 0
         while True:
             # Keep on polling until 'exit' event
             # if self.Q[0] != 'md-broadcast':
@@ -53,8 +51,9 @@ class MDBroadcast(threading.Thread):
                 if data == ['line-end']:
                     self.Q.put('exit')
                 else:
-                    print(data)
-                    CURRENT_BUFFER = data
+                    # i += 1
+                    # print(data, i)
+                    CURRENT_DATA_BUFFER = data
                     self.Q.put('md-listener')
                     # Only 'md-broadcast' can register itself
                     self.Q.put('md-broadcast')
@@ -70,14 +69,46 @@ class MDListener(threading.Thread):
         self.Q = que
         self.buffer = []
 
+    def SMA_LMA(self, ns:int, data: np.ndarray) -> tuple:
+        """
+        SMA - Short Term Moving Average
+        LMA - Long Term Moving Average
 
-    # def _run_trading_strategy(self):
-    #     """
-    #     Runs a trading strategy that
-    #     is mentioned.
-    #     :return:
-    #     """
-    #     pass
+        If SMA < LMA  ⇒ sell all stocks
+        If SMA > LMA  ⇒ buy the stocks, using all the cash that you’ve
+        :param nshort_days: Number of data points for SMA
+        :param nlong_days: Number of data points for LMA
+        :return: ('SELL', nStocks) or ('BUY', nAmount)
+        """
+
+        # print(data.shape)
+
+        return 'SELL', '*'
+
+    def _run_trading_strategy(self, strategy='sma-lma', **kwargs):
+        """
+        Runs a trading strategy that is mentioned.
+        By default it is SMA-LMA
+        :return:
+        """
+        if strategy == 'sma-lma':
+            # // TODO Need to outsource this function instead of being method of class
+            ns = kwargs.get('ns', 5)
+            nl = kwargs.get('nl', 10)
+            if len(self.buffer) > nl:
+                while len(self.buffer) != nl:
+                    self.buffer.pop(0)
+
+            if len(self.buffer) == nl:
+                data = np.asarray(self.buffer)
+                # print(data)
+                return self.SMA_LMA(ns, data)
+
+            if len(self.buffer) < nl:
+                # Can not do anything until we have at least nl data points
+                print(f'Not enough data to run the strategy.\n\tRequired {nl} data points '
+                      f'\n\tEncountered {len(self.buffer)} data points')
+                return
 
     def _validation(self, data):
         """
@@ -88,7 +119,7 @@ class MDListener(threading.Thread):
         """
         # Validating for numbers
         try:
-            for index, value in enumerate(data[1::]):
+            for index, value in enumerate(data[1::], start=1):
                 data[index] = float(value)
         except (ValueError, TypeError):
             # We can log the errors..Choosing the pass
@@ -100,17 +131,20 @@ class MDListener(threading.Thread):
 
         :return:
         """
-        global CURRENT_BUFFER
+        global CURRENT_DATA_BUFFER
+        global CURRENT_DECISION_BUFFER
         global lock
         while True:
             lock.acquire()
             if self.Q[0] == 'md-listener':
                 self.Q.get()
-                if self._validation(CURRENT_BUFFER):
-                    self.buffer.append(np.array(CURRENT_BUFFER))
-                    print(len(self.buffer))
-
-            # self.Q.task_done()
+                if self._validation(CURRENT_DATA_BUFFER):
+                    self.buffer.append(np.array(CURRENT_DATA_BUFFER))
+                    decision = self._run_trading_strategy(strategy='sma-lma', ns=5, nl=30)
+                    if decision:
+                        # print(decision)
+                        CURRENT_DECISION_BUFFER = decision
+                        self.Q.put('om-listener')
             lock.release()
             sleep(4)
 
@@ -121,5 +155,26 @@ class MDListener(threading.Thread):
 #         sleep(4)
 
 
-def om_listen(task_que):
-    pass
+# def om_listen(task_que):
+#     pass
+
+class OMListener(threading.Thread):
+    def __init__(self, que, portfolio, name=None):
+        super(self.__class__, self).__init__()
+        self.name = name
+        self.Q = que
+        self.portfolio = portfolio
+
+
+    def run(self):
+        """
+            :return:
+            """
+        global CURRENT_DECISION_BUFFER
+        global lock
+
+        while True:
+            lock.acquire()
+
+            lock.release()
+            sleep(5)
