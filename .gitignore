@@ -5,3 +5,4 @@ exchange_server.err
 exchange_server.out
 trading/__pycache__/
 trading/data/
+env/
