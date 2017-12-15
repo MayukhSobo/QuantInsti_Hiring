@@ -4,6 +4,8 @@ import threading
 import csv
 import os
 from trading.constants import CURRENT_BUFFER
+import numpy as np
+
 
 lock = threading.Lock()
 
@@ -56,7 +58,7 @@ class MDBroadcast(threading.Thread):
                     self.Q.put('md-listener')
                     # Only 'md-broadcast' can register itself
                     self.Q.put('md-broadcast')
-            self.Q.task_done()
+            # self.Q.task_done()
             lock.release()
             sleep(5)
 
@@ -66,7 +68,7 @@ class MDListener(threading.Thread):
         super(self.__class__, self).__init__()
         self.name = name
         self.Q = que
-        self.buffer = None
+        self.buffer = []
 
 
     # def _run_trading_strategy(self):
@@ -82,9 +84,16 @@ class MDListener(threading.Thread):
         Performs the validation of data
         fields. Protected method used only
         internally
-        :return: Boolean
+        :return: Boolean ( successful data cleaning ?)
         """
-        print('printing from MDListener', data)
+        # Validating for numbers
+        try:
+            for index, value in enumerate(data[1::]):
+                data[index] = float(value)
+        except (ValueError, TypeError):
+            # We can log the errors..Choosing the pass
+            return False
+        return True
 
     def run(self):
         """
@@ -97,8 +106,11 @@ class MDListener(threading.Thread):
             lock.acquire()
             if self.Q[0] == 'md-listener':
                 self.Q.get()
-                self._validation(CURRENT_BUFFER)
-            self.Q.task_done()
+                if self._validation(CURRENT_BUFFER):
+                    self.buffer.append(np.array(CURRENT_BUFFER))
+                    print(len(self.buffer))
+
+            # self.Q.task_done()
             lock.release()
             sleep(4)
 
