@@ -3,6 +3,7 @@ from time import sleep
 import threading
 import csv
 # from trading.constants import CURRENT_DATA_BUFFER
+from datetime import datetime as dt
 import numpy as np
 
 
@@ -71,19 +72,30 @@ class MDListener(threading.Thread):
 
     def SMA_LMA(self, ns:int, data: np.ndarray) -> tuple:
         """
+        This implements the actual trading strategy
+        algorithm. This method should be kept as simple
+        as possible. This calculates the Long term and
+        Short term moving averages and then performs the
+        following operations. Total number of data points
+        are taken for long term moving averages and hence
+        we should keep the data as clean as possible. This
+        method is a private method and should not be called
+        directly. A wrapper called _run_trading_strategy()
+        should be used as it perform the memory cleaning
+        stuffs before hand.
+
         SMA - Short Term Moving Average
         LMA - Long Term Moving Average
 
         If SMA < LMA  ⇒ sell all stocks
         If SMA > LMA  ⇒ buy the stocks, using all the cash that you’ve
-        :param nshort_days: Number of data points for SMA
-        :param nlong_days: Number of data points for LMA
-        :return: ('SELL', nStocks) or ('BUY', nAmount)
+        :param ns: Number of data points for SMA
+        :return: ('SELL', nStocks, current_price) or ('BUY', nAmount, current_price)
         """
 
         # print(data.shape)
 
-        return 'SELL', '*'
+        return 'SELL', '*', 170
 
     def _run_trading_strategy(self, strategy='sma-lma', **kwargs):
         """
@@ -140,7 +152,7 @@ class MDListener(threading.Thread):
                 self.Q.get()
                 if self._validation(CURRENT_DATA_BUFFER):
                     self.buffer.append(np.array(CURRENT_DATA_BUFFER))
-                    decision = self._run_trading_strategy(strategy='sma-lma', ns=5, nl=30)
+                    decision = self._run_trading_strategy(strategy='sma-lma', ns=5, nl=10)
                     if decision:
                         # print(decision)
                         CURRENT_DECISION_BUFFER = decision
@@ -165,7 +177,6 @@ class OMListener(threading.Thread):
         self.Q = que
         self.portfolio = portfolio
 
-
     def run(self):
         """
             :return:
@@ -175,6 +186,33 @@ class OMListener(threading.Thread):
 
         while True:
             lock.acquire()
+            if self.Q[0] == 'om-listener':
+                self.Q.get()
+                decision = CURRENT_DECISION_BUFFER[0]
+                amount = CURRENT_DECISION_BUFFER[1]
+                cp = CURRENT_DECISION_BUFFER[2]
+                if decision == 'SELL':
+                    # If we are selling stocks
+                    if amount == '*':
+                        # Selling all the stocks
+                        pass
+                    else:
+                        # // TODO Needs to be implemented later
+                        pass
+                elif decision == 'BUY':
+                    # If we are buying stocks
+                    if amount == '*':
+                        # Buying all the stocks
+                        pass
+                    else:
+                        # // TODO Needs to be implemented
+                        pass
 
+                # print(CURRENT_DECISION_BUFFER)
+                # print(self.portfolio.get_portfolio_value(current_price=120))
+
+                # Write the portfolio value to the CSV file
+                self.portfolio.write_portfolio_value(timestamp=dt.now(),
+                                                     current_price=cp)
             lock.release()
             sleep(5)

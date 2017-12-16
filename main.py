@@ -42,7 +42,8 @@ def main(server_port=8080):
     # ex_server.run(port=server_port)
     ############################################
     # Create a portfolio
-    account = porfolio.Porfolio(cash=1_000)
+    account = porfolio.Porfolio(cash=1_000,
+                                p_file='./trading/data/portfolio.csv')
     # ############################################
     # Event Loop
     main_event(account)
@@ -50,12 +51,14 @@ def main(server_port=8080):
     # Create thread workers and dispatch
     md_brd = MDBroadcast(name='md-broadcaster', que=constants.TASK_QUEUE)
     md_lstn = MDListener(name='md-listener', que=constants.TASK_QUEUE)
+    om_lstn = OMListener(name='om-listener', que=constants.TASK_QUEUE, portfolio=account)
     # md_lstn = Thread(target=md_listen, args=(constants.TASK_QUEUE,))
     # md_lstn.setDaemon(True)
     # md_lstn.start()
     # md_brd.setDaemon(True)
     md_brd.start()
     md_lstn.start()
+    om_lstn.start()
     # Wait for all threads to end, practically forever..:)
 
 
