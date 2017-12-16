@@ -1,13 +1,12 @@
 from time import sleep
-# from trading import helper
 import threading
 import csv
-# from trading.constants import CURRENT_DATA_BUFFER
 from datetime import datetime as dt
 import numpy as np
-
+import requests
 
 lock = threading.Lock()
+
 
 class MDBroadcast(threading.Thread):
     def __init__(self, que, name=None):
@@ -177,11 +176,25 @@ class OMListener(threading.Thread):
         self.Q = que
         self.portfolio = portfolio
 
+    @staticmethod
+    def _create_order(port):
+        """
+        It sends the order to the server
+        and receives the order id from the
+        exchange server.
+        :param: port address of exchange server
+        :return: Order Status
+        """
+        url = f'http://localhost:{port}'
+        order_id = requests.post(url + '/order').text
+        return requests.get(url + f'/order/:{order_id}')
+
     def run(self):
         """
             :return:
             """
         global CURRENT_DECISION_BUFFER
+        global CURRENT_DATA_BUFFER
         global lock
 
         while True:
@@ -191,11 +204,15 @@ class OMListener(threading.Thread):
                 decision = CURRENT_DECISION_BUFFER[0]
                 amount = CURRENT_DECISION_BUFFER[1]
                 cp = CURRENT_DECISION_BUFFER[2]
+                last_closed_value = float(CURRENT_DATA_BUFFER[-1])
                 if decision == 'SELL':
                     # If we are selling stocks
                     if amount == '*':
-                        # Selling all the stocks
-                        pass
+                        # If we have stocks left
+                        # if self.portfolio.stocks > 0:
+                        #     # Sell all stocks
+                        #     pass
+                        print(OMListener._create_order(port=8080))
                     else:
                         # // TODO Needs to be implemented later
                         pass

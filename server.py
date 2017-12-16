@@ -1,9 +1,7 @@
 from http.server import (BaseHTTPRequestHandler,
                          HTTPServer)
 import os
-import sys
 from trading import constants
-# import SocketServer
 
 
 class S(BaseHTTPRequestHandler):
@@ -23,7 +21,8 @@ class S(BaseHTTPRequestHandler):
     def do_POST(self):
         # Doesn't do anything with posted data
         self._set_headers()
-        self.wfile.write(b"<html><body><h1>POST!</h1></body></html>")
+        if self.path == '/order':
+            self.wfile.write(b"<html><body><h1>POST!</h1></body></html>")
 
 
 def run(port, server_class=HTTPServer, handler_class=S):
@@ -31,8 +30,6 @@ def run(port, server_class=HTTPServer, handler_class=S):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print('Starting httpd...')
-    sys.stdout = open('exchange_server' + ".out", "a")
-    sys.stderr = open('exchange_server' + ".err", "a")
     httpd.serve_forever()
 
 

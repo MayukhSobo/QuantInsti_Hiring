@@ -1,10 +1,9 @@
 from trading import constants
 from trading import preprocess
-from trading import ex_server
+# from trading import ex_server
+from subprocess import Popen
 import sys
 from trading import porfolio
-from multiprocessing import Process
-from threading import Thread
 from trading.workers import *
 
 
@@ -34,17 +33,15 @@ def main(server_port=8080):
 
     # Start the dummy exchange server
     # print('----- Starting the EXCHANGE server ------')
-    # server_process = Process(target=ex_server.run,
-    #                          args=(server_port, ))
-    # server_process.start()
-    # server_process.join()
-    # print('Server process pid: {}'.format(constants.EXCHANGE_SERVER_ID))
-    # ex_server.run(port=server_port)
+    # server = Popen(['python', 'server.py'])
+    # stdout_data, stderr_data = server.communicate()
+    # print(stdout_data)
     ############################################
     # Create a portfolio
+
     account = porfolio.Porfolio(cash=1_000,
                                 p_file='./trading/data/portfolio.csv')
-    # ############################################
+    ############################################
     # Event Loop
     main_event(account)
     ############################################
@@ -59,8 +56,9 @@ def main(server_port=8080):
     md_brd.start()
     md_lstn.start()
     om_lstn.start()
+
     # Wait for all threads to end, practically forever..:)
 
 
 if __name__ == "__main__":
-    main()
+    main(server_port=8081)
