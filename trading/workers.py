@@ -4,6 +4,7 @@ import csv
 from datetime import datetime as dt
 import numpy as np
 import requests
+import json
 
 lock = threading.Lock()
 
@@ -89,12 +90,15 @@ class MDListener(threading.Thread):
         If SMA < LMA  ⇒ sell all stocks
         If SMA > LMA  ⇒ buy the stocks, using all the cash that you’ve
         :param ns: Number of data points for SMA
-        :return: ('SELL', nStocks, current_price) or ('BUY', nAmount, current_price)
+        :return: ('SELL', nStocks) or ('BUY', nAmount)
         """
-
-        # print(data.shape)
-
-        return 'SELL', '*', 170
+        closing_prices = data[:, 1].astype(float)
+        LMA = closing_prices.mean()
+        SMA = closing_prices[-ns:].mean()
+        if SMA < LMA:
+            return 'SELL', '*'
+        else:
+            return 'BUY', '*'
 
     def _run_trading_strategy(self, strategy='sma-lma', **kwargs):
         """
@@ -134,8 +138,8 @@ class MDListener(threading.Thread):
                 data[index] = float(value)
         except (ValueError, TypeError):
             # We can log the errors..Choosing the pass
-            return False
-        return True
+            return False, None
+        return True, data
 
     def run(self):
         """
@@ -149,8 +153,9 @@ class MDListener(threading.Thread):
             lock.acquire()
             if self.Q[0] == 'md-listener':
                 self.Q.get()
-                if self._validation(CURRENT_DATA_BUFFER):
-                    self.buffer.append(np.array(CURRENT_DATA_BUFFER))
+                valid, data = self._validation(CURRENT_DATA_BUFFER)
+                if valid:
+                    self.buffer.append(np.array(data))
                     decision = self._run_trading_strategy(strategy='sma-lma', ns=5, nl=10)
                     if decision:
                         # print(decision)
@@ -187,7 +192,9 @@ class OMListener(threading.Thread):
         """
         url = f'http://localhost:{port}'
         order_id = requests.post(url + '/order').text
-        return requests.get(url + f'/order/:{order_id}')
+        oid = json.loads(json.loads(order_id))['order_id']
+        return requests.get(url + f'/order/:{oid}').text
+        # return order_id
 
     def run(self):
         """
@@ -203,33 +210,21 @@ class OMListener(threading.Thread):
                 self.Q.get()
                 decision = CURRENT_DECISION_BUFFER[0]
                 amount = CURRENT_DECISION_BUFFER[1]
-                cp = CURRENT_DECISION_BUFFER[2]
+                # cp = CURRENT_DECISION_BUFFER[2]
                 last_closed_value = float(CURRENT_DATA_BUFFER[-1])
-                if decision == 'SELL':
-                    # If we are selling stocks
-                    if amount == '*':
-                        # If we have stocks left
-                        # if self.portfolio.stocks > 0:
-                        #     # Sell all stocks
-                        #     pass
-                        print(OMListener._create_order(port=8080))
-                    else:
-                        # // TODO Needs to be implemented later
-                        pass
-                elif decision == 'BUY':
-                    # If we are buying stocks
-                    if amount == '*':
-                        # Buying all the stocks
-                        pass
-                    else:
-                        # // TODO Needs to be implemented
-                        pass
-
-                # print(CURRENT_DECISION_BUFFER)
-                # print(self.portfolio.get_portfolio_value(current_price=120))
-
+                order_status = None
+                if decision in ['BUY', 'SELL']:
+                    # Send the request to the exchange server
+                    order_status = OMListener._create_order(port=8080)
+                if order_status == 'True':
+                    if decision == 'SELL':
+                        # If we are selling stocks
+                        self.portfolio.sell(cp=last_closed_value, n_stocks=amount)
+                    elif decision == 'BUY':
+                        # If we are buying stocks
+                        self.portfolio.buy(cp=last_closed_value, n_amount=amount)
                 # Write the portfolio value to the CSV file
                 self.portfolio.write_portfolio_value(timestamp=dt.now(),
-                                                     current_price=cp)
+                                                     current_price=last_closed_value)
             lock.release()
             sleep(5)

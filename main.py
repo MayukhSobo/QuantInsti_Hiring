@@ -40,7 +40,8 @@ def main(server_port=8080):
     # Create a portfolio
 
     account = porfolio.Porfolio(cash=1_000,
-                                p_file='./trading/data/portfolio.csv')
+                                p_file='./trading/data/portfolio.csv',
+                                n_stocks=10)
     ############################################
     # Event Loop
     main_event(account)
