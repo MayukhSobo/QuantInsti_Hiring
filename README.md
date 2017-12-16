@@ -13,7 +13,7 @@
 <li><em>Python3.6</em> or above</li>
 <li><em>virtualenv 15.1</em> or above</li>
 </ul>
-<h2 id="how-to-configure">How to configure</h2>
+<h2 id="environment">Environment</h2>
 <ul>
 <li>Install the <em>virtualenv</em> using <em>pip</em> using the following command</li>
 </ul>
@@ -34,6 +34,10 @@
 </ul>
 <pre class=" language-sh"><code class="prism  language-sh">$ pip install -r requirement.txt 
 </code></pre>
+<h2 id="data">Data</h2>
+<p>If input dataset is not mentioned then, it pulls the data from <a href="www.quandl.com"><strong>Quandl</strong></a>. We can also pass the input data while running our program. The Quandl parameters like <em>api-key</em> or <em>company</em> should be given form <strong><a href="http://constants.py">constants.py</a></strong> file.</p>
+<p>The portfolio data is also saved into a csv file named <strong>portfolio.csv</strong> inside the data folder.</p>
+<p><strong>To provide your own dataset, please put the csv file into the data folder and mention the name of the csv file without the path. Do not name your csv file as <code>stock_data.csv</code></strong></p>
 <h2 id="running-the-program">Running the Program</h2>
 <ul>
 <li><strong>Run the exchange server</strong>
@@ -53,9 +57,6 @@
 </ul>
 </li>
 </ul>
-<h2 id="data">Data</h2>
-<p>If input dataset is not mentioned then, it pulls the data from <a href="www.quandl.com"><strong>Quandl</strong></a>. We can also pass the input data while running our program. The Quandl parameters like <em>api-key</em> or <em>company</em> should be given form <strong><a href="http://constants.py">constants.py</a></strong> file.</p>
-<p>The portfolio data is also saved into a csv file named <strong>portfolio.csv</strong> inside the data folder.</p>
 <h2 id="exit">Exit</h2>
 <p>The Sever program never exits because it continues to server for any incoming order update. To exit it, we need to kill it manually.</p>
 <p>The main engine however kills itself it <em>line-end</em> comes in the dataset or we kill it manually.</p>
