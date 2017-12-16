@@ -1,7 +1,5 @@
 from trading import constants
 from trading import preprocess
-# from trading import ex_server
-from subprocess import Popen
 import sys
 from trading import porfolio
 from trading.workers import *
@@ -18,36 +16,31 @@ def main_event(account):
             sys.exit()
 
 
-def main(server_port=8080):
-    # Load the data from Quandl
-    ############################################
-    print('----- Gathering Data from Quandl ------')
-    stock = preprocess.Gather('APPLE',
-                              constants.API_KEY,
-                              '2012-01-01',
-                              '2017-12-15')
-    ############################################
-    # Create a dataset
-    stock.write_csv('./trading/data/stock_data.csv')
-    ############################################
+def main(capital, data_path):
 
-    # Start the dummy exchange server
-    # print('----- Starting the EXCHANGE server ------')
-    # server = Popen(['python', 'server.py'])
-    # stdout_data, stderr_data = server.communicate()
-    # print(stdout_data)
-    ############################################
+    if data_path.split('/')[-1] == 'stock_data.csv':
+        # Load the data from Quandl
+        ############################################
+        print('----- Gathering Data from Quandl ------')
+        stock = preprocess.Gather('APPLE',
+                                  constants.API_KEY,
+                                  '2012-01-01',
+                                  '2017-12-15')
+        ############################################
+        # Create a data set
+        stock.write_csv(data_path)
+        ############################################
+
     # Create a portfolio
-
-    account = porfolio.Porfolio(cash=1_000,
-                                p_file='./trading/data/portfolio.csv',
-                                n_stocks=10)
+    account = porfolio.Porfolio(cash=capital,
+                                p_file='./trading/data/portfolio.csv')
     ############################################
     # Event Loop
     main_event(account)
     ############################################
     # Create thread workers and dispatch
-    md_brd = MDBroadcast(name='md-broadcaster', que=constants.TASK_QUEUE)
+    md_brd = MDBroadcast(name='md-broadcaster', que=constants.TASK_QUEUE, data_path=data_path,
+                         portfolio=account)
     md_lstn = MDListener(name='md-listener', que=constants.TASK_QUEUE)
     om_lstn = OMListener(name='om-listener', que=constants.TASK_QUEUE, portfolio=account)
     # md_lstn = Thread(target=md_listen, args=(constants.TASK_QUEUE,))
@@ -62,4 +55,10 @@ def main(server_port=8080):
 
 
 if __name__ == "__main__":
-    main(server_port=8081)
+    capital = float(sys.argv[1])
+    data_path = './trading/data/stock_data.csv'
+    try:
+        data_path = './trading/data/' + sys.argv[2]
+    except IndexError:
+        pass
+    main(capital, data_path)

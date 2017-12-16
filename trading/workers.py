@@ -5,23 +5,26 @@ from datetime import datetime as dt
 import numpy as np
 import requests
 import json
+import os
+
 
 lock = threading.Lock()
 
 
 class MDBroadcast(threading.Thread):
-    def __init__(self, que, name=None):
+    def __init__(self, que, data_path, portfolio, name=None):
         super(self.__class__, self).__init__()
         self.name = name
         self.Q = que
-        self._data = self._get_csv_line()
+        self._data = self._get_csv_line(data_path)
+        self.account = portfolio
 
     @property
     def data(self):
         return self._data
 
-    def _get_csv_line(self):
-        with open('./trading/data/stock_data.csv', 'r') as stock_data:
+    def _get_csv_line(self, data_path):
+        with open(data_path, 'r') as stock_data:
             next(stock_data)
             for each_stock in csv.reader(stock_data):
                 # Generator for parsing long CSV without memory issue
@@ -48,9 +51,15 @@ class MDBroadcast(threading.Thread):
             if self.Q[0] == 'md-broadcast':
                 self.Q.get()
                 # If it is md-broadcast task
-                data = next(self.data)
+                try:
+                    data = next(self.data)
+                except StopIteration:
+                    # We don't have enough data
+                    print(self.account)
+                    os._exit(1)
                 if data == ['line-end']:
-                    self.Q.put('exit')
+                    print(self.account)
+                    os._exit(1)
                 else:
                     # i += 1
                     # print(data, i)
@@ -116,6 +125,7 @@ class MDListener(threading.Thread):
 
             if len(self.buffer) == nl:
                 data = np.asarray(self.buffer)
+                print(f'Running Strategy: {strategy}')
                 # print(data)
                 return self.SMA_LMA(ns, data)
 
@@ -160,6 +170,7 @@ class MDListener(threading.Thread):
                     if decision:
                         # print(decision)
                         CURRENT_DECISION_BUFFER = decision
+                        # print(decision)
                         self.Q.put('om-listener')
             lock.release()
             sleep(4)
@@ -215,7 +226,7 @@ class OMListener(threading.Thread):
                 order_status = None
                 if decision in ['BUY', 'SELL']:
                     # Send the request to the exchange server
-                    order_status = OMListener._create_order(port=8080)
+                    order_status = OMListener._create_order(port=8081)
                 if order_status == 'True':
                     if decision == 'SELL':
                         # If we are selling stocks

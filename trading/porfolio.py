@@ -15,7 +15,7 @@ class Porfolio:
             csv_writer.writerow(['timestamp', 'portfolio_value'])
 
     def __str__(self):
-        print('You have: ${} remaining'.format(self.cash))
+        return f'You have: ${self.cash} remaining'
 
     def get_portfolio_value(self, current_price):
         return self.cash + self.stocks * current_price
