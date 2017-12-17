@@ -1,4 +1,5 @@
 import quandl
+
 from trading import constants
 
 

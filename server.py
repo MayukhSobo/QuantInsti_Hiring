@@ -1,11 +1,13 @@
+import json
+import os
+import uuid
 from http.server import (BaseHTTPRequestHandler,
                          HTTPServer)
-import os
-from trading import constants
-from time import sleep
-import uuid
-import json
 from random import randint
+from time import sleep
+
+from trading import constants
+
 
 class S(BaseHTTPRequestHandler):
     order_status = {}

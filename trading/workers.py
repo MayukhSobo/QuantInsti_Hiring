@@ -1,29 +1,32 @@
-from time import sleep
-import threading
 import csv
-from datetime import datetime as dt
-import numpy as np
-import requests
 import json
 import os
+# import sys
+import threading
+from datetime import datetime as dt
+from time import sleep
 
+import numpy as np
+import requests
 
 lock = threading.Lock()
 
 
 class MDBroadcast(threading.Thread):
+
     def __init__(self, que, data_path, portfolio, name=None):
         super(self.__class__, self).__init__()
         self.name = name
         self.Q = que
-        self._data = self._get_csv_line(data_path)
+        self._data = MDBroadcast.get_csv_line(data_path)
         self.account = portfolio
 
     @property
     def data(self):
         return self._data
 
-    def _get_csv_line(self, data_path):
+    @staticmethod
+    def get_csv_line(data_path):
         with open(data_path, 'r') as stock_data:
             next(stock_data)
             for each_stock in csv.reader(stock_data):
@@ -48,7 +51,7 @@ class MDBroadcast(threading.Thread):
             #     # Don't bother for other tasks
             #     continue
             lock.acquire()
-            if self.Q[0] == 'md-broadcast':
+            if self.Q[0] == 'md-broadcaster':
                 self.Q.get()
                 # If it is md-broadcast task
                 try:
@@ -57,16 +60,20 @@ class MDBroadcast(threading.Thread):
                     # We don't have enough data
                     print(self.account)
                     os._exit(1)
+                    # self.Q.put('exit')
+                    # sys.exit()
                 if data == ['line-end']:
                     print(self.account)
                     os._exit(1)
+                    # self.Q.put('exit')
+                    # sys.exit()
                 else:
                     # i += 1
                     # print(data, i)
                     CURRENT_DATA_BUFFER = data
                     self.Q.put('md-listener')
                     # Only 'md-broadcast' can register itself
-                    self.Q.put('md-broadcast')
+                    self.Q.put('md-broadcaster')
             # self.Q.task_done()
             lock.release()
             sleep(5)
@@ -166,7 +173,7 @@ class MDListener(threading.Thread):
                 valid, data = self._validation(CURRENT_DATA_BUFFER)
                 if valid:
                     self.buffer.append(np.array(data))
-                    decision = self._run_trading_strategy(strategy='sma-lma', ns=5, nl=10)
+                    decision = self._run_trading_strategy(strategy='sma-lma', ns=5, nl=30)
                     if decision:
                         # print(decision)
                         CURRENT_DECISION_BUFFER = decision
