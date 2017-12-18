@@ -1,8 +1,3 @@
----
-
-
----
-
 <h1 id="quantinsti-hiring">QuantInsti Hiring</h1>
 <p>Implementation of the complete stack for getting the data and then implementing a trading strategy.</p>
 <h1 id="implementation">Implementation</h1>
